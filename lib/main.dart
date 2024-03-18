@@ -155,7 +155,7 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
                             Text(subTitle),
                           ],
                         ),
-                        Text(formatDate(DateTime.parse(timestamp)))
+                        //Text(formatDate(DateTime.parse(timestamp)))
                       ],
                     ),
                   ),
