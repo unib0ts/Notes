@@ -105,6 +105,8 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
           Map<String, dynamic> entryMap = json.decode(myList[index].value);
           String timestamp = entryMap['timestamp'];
           String subTitle = entryMap['value'];
+          String title = entryMap['title'];
+          print(subTitle);
           final item = myList[index];
           return Dismissible(
             key: Key(item.key),
@@ -149,7 +151,7 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('${myList[index].key}'),
+                            Text(title,style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold),),
                             Text(subTitle),
                           ],
                         ),

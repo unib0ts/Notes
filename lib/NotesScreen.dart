@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:share/share.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -56,7 +57,7 @@ class _NotesScreenState extends State<NotesScreen> {
           icon: Icon(Icons.arrow_back),
           onPressed: () {
             if (widget.type! == 'Edit') {
-              updateSharedPreferencesItem(widget.editContent!['key'],content);
+              updateSharedPreferencesItem(widget.editContent!['key'],_controller.text);
             } else {
               _addStringMapEntry(
                   generateRandom4DigitNumber().toString(), _controller.text, _controllertitle.text);
@@ -87,7 +88,7 @@ class _NotesScreenState extends State<NotesScreen> {
                 updateSharedPreferencesItem(widget.editContent!['key'],content);
               } else {
                 _addStringMapEntry(
-                    generateRandom4DigitNumber().toString(), content, 'title');
+                    generateRandom4DigitNumber().toString(), content, _controllertitle.text);
               }
               Navigator.pop(context);
             },
@@ -149,6 +150,10 @@ class _NotesScreenState extends State<NotesScreen> {
                   ),
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Text(widget.type! == 'Edit'? 'Last updated at : '+formatDate(DateTime.parse(widget.editContent!['timestamp'])) : ''),
+              )
             ],
           ),
         ),
@@ -197,5 +202,9 @@ class _NotesScreenState extends State<NotesScreen> {
   }
   void shareText(String text) {
     Share.share(text);
+  }
+
+  String formatDate(DateTime dateTime) {
+    return DateFormat('dd/MM/yyyy').format(dateTime).toString();
   }
 }
