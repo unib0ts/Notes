@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:notes/NotesScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -21,6 +22,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: SharedPreferencesListDemo(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -44,18 +46,6 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
 
   Future<void> _initSharedPreferences() async {
     _prefs = await SharedPreferences.getInstance();
-    _loadListFromSharedPreferences();
-  }
-
-  void _addStringMapEntry(String key, String value) {
-    DateTime now = DateTime.now();
-    String dateTimeString = now.toIso8601String();
-    Map<String, dynamic> entry = {
-      'key': key,
-      'value': value,
-      'timestamp': dateTimeString,
-    };
-    _prefs.setString(key, json.encode(entry));
     _loadListFromSharedPreferences();
   }
 
@@ -83,6 +73,11 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
     });
   }
 
+  Future<void> deleteSharedPreferencesItem(String key) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove(key);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -104,45 +99,79 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
           ),
         ],
       ),
-      body: Expanded(
-        child: ListView.builder(
-          itemCount: myList.length,
-          itemBuilder: (context, index) {
-            Map<String, dynamic> entryMap = json.decode(myList[index].value);
-            String timestamp = entryMap['timestamp'];
-            String subTitle = entryMap['value'];
-            return Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(9)
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('${myList[index].key}'),
-                          Text(subTitle),
-                        ],
-                      ),
-                      Text(formatDate(DateTime.parse(timestamp)))
-                    ],
+      body: ListView.builder(
+        itemCount: myList.length,
+        itemBuilder: (context, index) {
+          Map<String, dynamic> entryMap = json.decode(myList[index].value);
+          String timestamp = entryMap['timestamp'];
+          String subTitle = entryMap['value'];
+          final item = myList[index];
+          return Dismissible(
+            key: Key(item.key),
+            background: Container(
+              color: Colors.red,
+              alignment: Alignment.centerRight,
+              padding: EdgeInsets.symmetric(horizontal: 20.0),
+              child: Icon(
+                Icons.delete,
+                color: Colors.white,
+              ),
+            ),
+            direction: DismissDirection.endToStart,
+            onDismissed: (direction) {
+              setState(() {
+                myList.removeAt(index);
+                deleteSharedPreferencesItem(item.key);
+              });
+            },
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(
+                    builder: (context) => NotesScreen(type: 'Edit', editContent: entryMap))).then((value) {
+                  setState(() {
+                    value != null ? myList.remove(value):(){};
+                  });
+                      _loadListFromSharedPreferences();
+                });
+              },
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(9)
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('${myList[index].key}'),
+                            Text(subTitle),
+                          ],
+                        ),
+                        Text(formatDate(DateTime.parse(timestamp)))
+                      ],
+                    ),
                   ),
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
        onPressed: () {
-          _addStringMapEntry('key6', 'value32');
-        },
+         Navigator.push(context, MaterialPageRoute(builder: (context) => NotesScreen(type: 'New',))).then((value) {
+           setState(() {
+             _loadListFromSharedPreferences();
+           });
+         });
+
+       },
         backgroundColor: Color(0xFF2D94CE),
         child: Icon(Icons.add,color: Colors.white,),
       ),
