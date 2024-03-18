@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,113 +17,204 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: SharedPreferencesListDemo(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class SharedPreferencesListDemo extends StatefulWidget {
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _SharedPreferencesListDemoState createState() => _SharedPreferencesListDemoState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
+  late SharedPreferences _prefs;
+  List<MapEntry<String, String>> myList = [];
+  List<MapEntry<String, String>> filteredList = [];
 
-  void _incrementCounter() {
+  @override
+  void initState() {
+    super.initState();
+    _initSharedPreferences();
+  }
+
+  Future<void> _initSharedPreferences() async {
+    _prefs = await SharedPreferences.getInstance();
+    _loadListFromSharedPreferences();
+  }
+
+  void _addStringMapEntry(String key, String value) {
+    DateTime now = DateTime.now();
+    String dateTimeString = now.toIso8601String();
+    Map<String, dynamic> entry = {
+      'key': key,
+      'value': value,
+      'timestamp': dateTimeString,
+    };
+    _prefs.setString(key, json.encode(entry));
+    _loadListFromSharedPreferences();
+  }
+
+  void _filterList(String query) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      filteredList = myList
+          .where((entry) =>
+      entry.key.toLowerCase().contains(query.toLowerCase()) ||
+          entry.value.toLowerCase().contains(query.toLowerCase()))
+          .toList();
     });
   }
 
+  Future<void> _loadListFromSharedPreferences() async {
+    List<String> keys = _prefs.getKeys().toList();
+    List<MapEntry<String, String>> list = [];
+    for (String key in keys) {
+      String? jsonString = _prefs.getString(key);
+      if (jsonString != null) {
+        Map<String, dynamic> entry = json.decode(jsonString);
+        String value = entry['value'];
+        String timestampString = entry['timestamp'];
+        DateTime timestamp = DateTime.parse(timestampString);
+        list.add(MapEntry(key, value)); // Add only key and value to the list
+      }
+    }
+    setState(() {
+      myList = list;
+      filteredList = list;
+    });
+  }
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
+      backgroundColor: Color(0xFFF0F3FF),
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text('Notes'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.search),
+            onPressed: () async {
+              final String? query = await showSearch<String?>(
+                context: context,
+                delegate: _DataSearch(myList: myList),
+              );
+              if (query != null) {
+                _filterList(query);
+              }
+            },
+          ),
+        ],
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+      body: Expanded(
+        child: ListView.builder(
+          itemCount: myList.length,
+          itemBuilder: (context, index) {
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(9)
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        children: [
+                          Text('${myList[index].key}'),
+                          Text('${myList[index].value}'),
+                        ],
+                      ),
+                      Text(formatDate(DateTime.now()))
+                    ],
+                  ),
+                ),
+              ),
+            );
+              /*ListTile(
+              title: Text('${myList[index].key}: ${myList[index].value}'),
+            );*/
+          },
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+       onPressed: () {
+    _addStringMapEntry('key8', 'testing');
+    },
+        child: Icon(Icons.add),
+      ),
+    );
+  }
+
+  String formatDate(DateTime dateTime) {
+    return DateFormat('dd/MM/yyyy').format(dateTime);
+  }
+}
+
+class _DataSearch extends SearchDelegate<String?> {
+  final List<MapEntry<String, String>> myList;
+
+  _DataSearch({required this.myList});
+
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+        },
+      ),
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, null);
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    final List<MapEntry<String, String>> results = myList
+        .where((entry) =>
+    entry.key.toLowerCase().contains(query.toLowerCase()) ||
+        entry.value.toLowerCase().contains(query.toLowerCase()))
+        .toList();
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (context, index) {
+        return ListTile(
+          title: Text('${results[index].key}: ${results[index].value}'),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    final List<MapEntry<String, String>> suggestions = myList
+        .where((entry) =>
+    entry.key.toLowerCase().contains(query.toLowerCase()) ||
+        entry.value.toLowerCase().contains(query.toLowerCase()))
+        .toList();
+    return ListView.builder(
+      itemCount: suggestions.length,
+      itemBuilder: (context, index) {
+        return ListTile(
+          title: Text('${suggestions[index].key}: ${suggestions[index].value}'),
+        );
+      },
     );
   }
 }
+
