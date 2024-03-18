@@ -73,20 +73,16 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
     List<String> keys = _prefs.getKeys().toList();
     List<MapEntry<String, String>> list = [];
     for (String key in keys) {
-      String? jsonString = _prefs.getString(key);
-      if (jsonString != null) {
-        Map<String, dynamic> entry = json.decode(jsonString);
-        String value = entry['value'];
-        String timestampString = entry['timestamp'];
-        DateTime timestamp = DateTime.parse(timestampString);
-        list.add(MapEntry(key, value)); // Add only key and value to the list
+      String? value = _prefs.getString(key);
+      if (value != null) {
+        list.add(MapEntry(key, value));
       }
     }
     setState(() {
       myList = list;
-      filteredList = list;
     });
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -112,6 +108,9 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
         child: ListView.builder(
           itemCount: myList.length,
           itemBuilder: (context, index) {
+            Map<String, dynamic> entryMap = json.decode(myList[index].value);
+            String timestamp = entryMap['timestamp'];
+            String subTitle = entryMap['value'];
             return Padding(
               padding: const EdgeInsets.all(8.0),
               child: Container(
@@ -125,28 +124,27 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('${myList[index].key}'),
-                          Text('${myList[index].value}'),
+                          Text(subTitle),
                         ],
                       ),
-                      Text(formatDate(DateTime.now()))
+                      Text(formatDate(DateTime.parse(timestamp)))
                     ],
                   ),
                 ),
               ),
             );
-              /*ListTile(
-              title: Text('${myList[index].key}: ${myList[index].value}'),
-            );*/
           },
         ),
       ),
       floatingActionButton: FloatingActionButton(
        onPressed: () {
-    _addStringMapEntry('key8', 'testing');
-    },
-        child: Icon(Icons.add),
+          _addStringMapEntry('key6', 'value32');
+        },
+        backgroundColor: Color(0xFF2D94CE),
+        child: Icon(Icons.add,color: Colors.white,),
       ),
     );
   }
@@ -193,8 +191,10 @@ class _DataSearch extends SearchDelegate<String?> {
     return ListView.builder(
       itemCount: results.length,
       itemBuilder: (context, index) {
+        Map<String, dynamic> entryMap = json.decode(myList[index].value);
+
         return ListTile(
-          title: Text('${results[index].key}: ${results[index].value}'),
+          title: Text('${results[index].key}: ${entryMap['value']}'),
         );
       },
     );
@@ -210,8 +210,9 @@ class _DataSearch extends SearchDelegate<String?> {
     return ListView.builder(
       itemCount: suggestions.length,
       itemBuilder: (context, index) {
+        Map<String, dynamic> entryMap = json.decode(myList[index].value);
         return ListTile(
-          title: Text('${suggestions[index].key}: ${suggestions[index].value}'),
+          title: Text('${suggestions[index].key}: ${entryMap['value']}'),
         );
       },
     );
