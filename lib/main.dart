@@ -1,9 +1,10 @@
 import 'dart:convert';
-
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:notes/NotesScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 void main() {
   runApp(const MyApp());
@@ -78,19 +79,28 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
     await prefs.remove(key);
   }
 
+  void updateState(dynamic value) {
+
+
+    setState(() {
+      value != null ? myList.remove(value):(){};
+    });
+    _loadListFromSharedPreferences();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF0F3FF),
+      backgroundColor: const Color(0xFFF0F3FF),
       appBar: AppBar(
-        title: Text('Notes'),
+        title: const Text('Notes'),
         actions: [
           IconButton(
-            icon: Icon(Icons.search),
+            icon: const Icon(Icons.search),
             onPressed: () async {
               final String? query = await showSearch<String?>(
                 context: context,
-                delegate: _DataSearch(myList: myList),
+                delegate: _DataSearch(myList: myList, callback: updateState),
               );
               if (query != null) {
                 _filterList(query);
@@ -99,86 +109,142 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: myList.length,
-        itemBuilder: (context, index) {
-          Map<String, dynamic> entryMap = json.decode(myList[index].value);
-          String timestamp = entryMap['timestamp'];
-          String subTitle = entryMap['value'];
-          String title = entryMap['title'];
-          print(subTitle);
-          final item = myList[index];
-          return Dismissible(
-            key: Key(item.key),
-            background: Container(
-              color: Colors.red,
-              alignment: Alignment.centerRight,
-              padding: EdgeInsets.symmetric(horizontal: 20.0),
-              child: Icon(
-                Icons.delete,
-                color: Colors.white,
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(8,8.0,8,0),
+        child: StaggeredGridView.countBuilder(
+          crossAxisCount:2, // Number of columns
+          itemCount: myList.length,
+          itemBuilder: (BuildContext context, int index) {
+            Map<String, dynamic> entryMap = json.decode(myList[index].value);
+            String subTitle = entryMap['value'];
+            String title = entryMap['title'];
+            final item = myList[index];
+            return Dismissible(
+              key: Key(item.key),
+              background: Container(
+                color: Colors.red,
+                alignment: Alignment.centerRight,
+                padding: EdgeInsets.symmetric(horizontal: 20.0),
+                child: Icon(
+                  Icons.delete,
+                  color: Colors.white,
+                ),
               ),
-            ),
-            direction: DismissDirection.endToStart,
-            onDismissed: (direction) {
-              setState(() {
-                myList.removeAt(index);
-                deleteSharedPreferencesItem(item.key);
-              });
-            },
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(
-                    builder: (context) => NotesScreen(type: 'Edit', editContent: entryMap))).then((value) {
-                  setState(() {
-                    value != null ? myList.remove(value):(){};
-                  });
-                      _loadListFromSharedPreferences();
+              direction: DismissDirection.endToStart,
+              confirmDismiss: (direction) async {
+                return await showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text("Confirm"),
+                      content: Text("Are you sure you want to delete this item?"),
+                      actions: <Widget>[
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: Text("DELETE"),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: Text("CANCEL"),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              onDismissed: (direction) {
+                setState(() {
+                  myList.removeAt(index);
+                  deleteSharedPreferencesItem(item.key);
                 });
               },
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 0),
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NotesScreen(type: 'Edit', editContent: entryMap),
+                    ),
+                  ).then((value) {
+                    setState(() {
+                      value != null ? myList.remove(value) : () {};
+                    });
+                    _loadListFromSharedPreferences();
+                  });
+                },
                 child: Container(
+                  width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(9)
+                    borderRadius: BorderRadius.circular(9),
+                    border: Border.all(color: Colors.grey, width:0.5),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Visibility(
-                                visible: title.isNotEmpty ,child: Text(title,style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold),)),
-                            Visibility(visible: subTitle.isNotEmpty ,child: Text(subTitle)),
-                          ],
+                        Visibility(
+                          visible: title.isNotEmpty,
+                          child: Text(
+                            title,
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
                         ),
-                        //Text(formatDate(DateTime.parse(timestamp)))
+                        Visibility(
+                          visible: subTitle.isNotEmpty,
+                          child: Text(
+                            maxLines: 6,
+                            subTitle,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+          staggeredTileBuilder: (int index) =>
+              StaggeredTile.fit(1), // Specify the number of columns each item should occupy
+          mainAxisSpacing: 10.0, // Set spacing between items vertically
+          crossAxisSpacing: 10.0, // Set spacing between items horizontally
+        ),
       ),
+
+
+
       floatingActionButton: FloatingActionButton(
        onPressed: () {
-         Navigator.push(context, MaterialPageRoute(builder: (context) => NotesScreen(type: 'New',))).then((value) {
+         Navigator.push(context, MaterialPageRoute(builder: (context) => const NotesScreen(type: 'New',))).then((value) {
            setState(() {
              _loadListFromSharedPreferences();
            });
          });
 
        },
-        backgroundColor: Color(0xFF2D94CE),
-        child: Icon(Icons.add,color: Colors.white,),
+        backgroundColor: const Color(0xFF2D94CE),
+        child: const Icon(Icons.add,color: Colors.white,),
       ),
     );
+  }
+  double calculateItemHeight(String text) {
+    // Create a TextPainter object
+    final TextPainter textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(fontSize: 16), // Set the font size according to your design
+      ),
+      maxLines: 2, // Set the maximum number of lines for the text
+      textDirection: ui.TextDirection.ltr, // Set text direction to left-to-right
+    );
+
+    // Layout and calculate the text's dimensions
+    textPainter.layout(maxWidth: double.infinity);
+
+    // Return the height of the text
+    return textPainter.height;
   }
 
   String formatDate(DateTime dateTime) {
@@ -188,14 +254,16 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
 
 class _DataSearch extends SearchDelegate<String?> {
   final List<MapEntry<String, String>> myList;
+  final Function(dynamic) callback;
 
-  _DataSearch({required this.myList});
+
+  _DataSearch({required this.myList, required this.callback});
 
   @override
   List<Widget> buildActions(BuildContext context) {
     return [
       IconButton(
-        icon: Icon(Icons.clear),
+        icon: const Icon(Icons.clear),
         onPressed: () {
           query = '';
         },
@@ -206,7 +274,7 @@ class _DataSearch extends SearchDelegate<String?> {
   @override
   Widget buildLeading(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.arrow_back),
+      icon: const Icon(Icons.arrow_back),
       onPressed: () {
         close(context, null);
       },
@@ -236,19 +304,33 @@ class _DataSearch extends SearchDelegate<String?> {
   @override
   Widget buildSuggestions(BuildContext context) {
     print('query'+query);
-    final List<MapEntry<String, String>> suggestions = myList
-        .where((entry) =>
-    entry.key.toLowerCase().contains(query.toLowerCase()) ||
-        entry.value.toLowerCase().contains(query.toLowerCase()))
-        .toList();
-    return  query == '' ? Text(''):
+    final List<MapEntry<String, String>> suggestions = myList.where((entry) {
+
+      print("entry : " + entry.toString());
+
+      Map<String, dynamic> jsonObject = json.decode(entry.value);
+      print("value  : " + jsonObject['title']);
+      return jsonObject['title'].toString().toLowerCase().contains(query.toLowerCase()) ||
+          jsonObject['value'].toString().toLowerCase().contains(query.toLowerCase());
+    }).toList();
+
+    print("myList" + myList.toString());
+    print("suggestion" + suggestions.toString());
+    return  query == '' ? const Text(''):
      ListView.builder(
       itemCount: suggestions.length,
       itemBuilder: (context, index) {
-        Map<String, dynamic> entryMap = json.decode(myList[index].value);
-        return  /*query == null? */ ListTile(
-          title: Text('${entryMap['title']}'),
-          subtitle: Text(' ${entryMap['value']}'),
+        Map<String, dynamic> entryMap = json.decode(suggestions[index].value);
+        return ListTile(
+          onTap: () {
+            print('search Navi');
+            Navigator.pushReplacement(context, MaterialPageRoute(
+                builder: (context) => NotesScreen(type: 'Edit', editContent: entryMap))).then((value) {
+                  callback(value);
+            });
+          },
+          title: entryMap['title'].toString().isNotEmpty == false ? null :Text('${entryMap['title']}'),
+          subtitle: Visibility(visible: entryMap['value'].toString().isNotEmpty ,child: Text(' ${entryMap['value']}',overflow: TextOverflow.ellipsis,)),
         );
       },
     );

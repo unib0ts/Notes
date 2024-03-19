@@ -51,119 +51,131 @@ class _NotesScreenState extends State<NotesScreen> {
   Widget build(BuildContext context) {
     double screenHeight = MediaQuery.of(context).size.height;
     int maxLines = (screenHeight / 20).floor(); // Assuming each line is
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            if(_controller.text.isNotEmpty || _controllertitle.text.isNotEmpty) {
-              if (widget.type! == 'Edit') {
-                updateSharedPreferencesItem(
-                    widget.editContent!['key'], _controller.text);
-              } else {
-                _addStringMapEntry(
-                    generateRandom4DigitNumber().toString(), _controller.text,
-                    _controllertitle.text);
-              }
-            }
-            Navigator.pop(context);
-          },
-        ),
-        title: Text('Notes'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.share_sharp),
-            onPressed: () {
-              shareText(content);
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.delete,color: Colors.red,),
-            onPressed: () {
-              deleteSharedPreferencesItem(widget.editContent!['key']);
-
-              widget.type == 'Edit' ? Navigator.pop(context,widget.editContent!['key'].toString()): (){};
-            },
-          ),
-          IconButton(
-            icon: Text('Done', style: TextStyle(fontSize: 15, color: Colors.black, fontWeight: FontWeight.bold)),
+    return WillPopScope(
+      onWillPop: () async {
+        if(_controller.text.isNotEmpty || _controllertitle.text.isNotEmpty) {
+          if (widget.type! == 'Edit') {
+            updateSharedPreferencesItem(
+                widget.editContent!['key'], _controller.text,_controllertitle.text);
+          } else {
+            _addStringMapEntry(
+                generateRandom4DigitNumber().toString(), _controller.text,
+                _controllertitle.text);
+          }
+        }
+        Navigator.pop(context);
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
             onPressed: () {
               if(_controller.text.isNotEmpty || _controllertitle.text.isNotEmpty) {
                 if (widget.type! == 'Edit') {
                   updateSharedPreferencesItem(
-                      widget.editContent!['key'], content);
+                      widget.editContent!['key'], _controller.text,_controllertitle.text);
                 } else {
                   _addStringMapEntry(
-                      generateRandom4DigitNumber().toString(), content,
+                      generateRandom4DigitNumber().toString(), _controller.text,
                       _controllertitle.text);
                 }
               }
               Navigator.pop(context);
             },
           ),
+          title: Text('Notes'),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.share_sharp),
+              onPressed: () {
+                shareText(content);
+              },
+            ),
 
-        ],
-      ),
-      backgroundColor: Colors.white,
-      body:  SizedBox(
-        height: double.infinity,
-        child: Padding(
-          padding: const EdgeInsets.only(left: 8.0,right: 8.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: EdgeInsets.only(left: 8, right: 8),
-                child: TextField(
-                  autofocus: widget.type! == 'Edit'? false : true,
-                  controller: _controllertitle,
-                  maxLines: null, // Allow multiple lines
-                  textInputAction: TextInputAction.next,
-                    maxLength: 100,
-                 // maxLengthEnforcement: MaxLengthEnforcement.values,
-                  decoration: const InputDecoration(
-                    hintText: 'Title',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    hintStyle: TextStyle(color: Colors.grey, fontWeight: FontWeight.normal, fontSize: 24),
-                    counter: SizedBox.shrink(),
-                  ),
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
-                  onChanged: (value) {
-                    setState(() {
-                      //content = value;
-                    });
-                  },
-                ),
-              ),
-              Expanded(
-                child: Padding(
+            /*IconButton(
+              icon: Text('Done', style: TextStyle(fontSize: 15, color: Colors.black, fontWeight: FontWeight.bold)),
+              onPressed: () {
+                if(_controller.text.isNotEmpty || _controllertitle.text.isNotEmpty) {
+                  if (widget.type! == 'Edit') {
+                    updateSharedPreferencesItem(
+                        widget.editContent!['key'], _controller.text,_controllertitle.text);
+                  } else {
+                    _addStringMapEntry(
+                        generateRandom4DigitNumber().toString(), _controller.text,
+                        _controllertitle.text);
+                  }
+                }
+                Navigator.pop(context);
+              },
+            ),*/
+
+          ],
+        ),
+        backgroundColor: Colors.white,
+        body:  SizedBox(
+          height: double.infinity,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 8.0,right: 8.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
                   padding: EdgeInsets.only(left: 8, right: 8),
                   child: TextField(
                     autofocus: widget.type! == 'Edit'? false : true,
-                    controller: _controller,
-                    keyboardType: TextInputType.multiline,
-                    maxLines: maxLines, // Allow multiple lines
-                    decoration: InputDecoration(
-                      hintText: 'Note',
-                      hintStyle: TextStyle(color: Colors.grey, fontWeight: FontWeight.normal, fontSize: 17),
+                    controller: _controllertitle,
+                    maxLines: null, // Allow multiple lines
+                    textInputAction: TextInputAction.next,
+                      maxLength: 100,
+                   // maxLengthEnforcement: MaxLengthEnforcement.values,
+                    decoration: const InputDecoration(
+                      hintText: 'Title',
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
+                      hintStyle: TextStyle(color: Colors.grey, fontWeight: FontWeight.normal, fontSize: 24),
+                      counter: SizedBox.shrink(),
                     ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
                     onChanged: (value) {
                       setState(() {
-                        content = value;
+                        //content = value;
                       });
                     },
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Text(widget.type! == 'Edit'? 'Edited : '+formatDate(DateTime.parse(widget.editContent!['timestamp'])) : '',
-                style: const TextStyle(fontSize: 10.0, color: Colors.black),),
-              )
-            ],
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 8, right: 8),
+                    child: TextField(
+                      autofocus: widget.type! == 'Edit'? false : true,
+                      controller: _controller,
+                      keyboardType: TextInputType.multiline,
+                      maxLines: maxLines, // Allow multiple lines
+                      decoration: InputDecoration(
+                        hintText: 'Note',
+                        hintStyle: TextStyle(color: Colors.grey, fontWeight: FontWeight.normal, fontSize: 17),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          content = value;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.center,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8,bottom: 8),
+                    child: Text(widget.type! == 'Edit'? 'Edited : '+formatDate(DateTime.parse(widget.editContent!['timestamp'])) : '',
+                    style: const TextStyle(fontSize: 10.0, color: Colors.black),),
+                  ),
+                )
+              ],
+            ),
           ),
         ),
       ),
@@ -186,7 +198,7 @@ class _NotesScreenState extends State<NotesScreen> {
     Random random = Random();
     return random.nextInt(9000) + 1000;
   }
-  Future<void> updateSharedPreferencesItem(String key, String newValue) async {
+  Future<void> updateSharedPreferencesItem(String key, String newValue, String newTitle) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     // Fetch current data from SharedPreferences
@@ -197,6 +209,7 @@ class _NotesScreenState extends State<NotesScreen> {
 
       // Update specific item in the data
       data['value'] = newValue;
+      data['title'] = newTitle;
 
       // Encode Map to JSON string
       String updatedJsonString = json.encode(data);
