@@ -93,7 +93,10 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
     return Scaffold(
       backgroundColor: const Color(0xFFF0F3FF),
       appBar: AppBar(
-        title: const Text('Notes'),
+        title: const Padding(
+          padding: EdgeInsets.fromLTRB(4, 4,8,8),
+          child: Text('Notes', style: TextStyle(fontSize: 34),),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
@@ -111,7 +114,7 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
       ),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(8,8.0,8,0),
-        child: StaggeredGridView.countBuilder(
+        child: myList.isNotEmpty ? StaggeredGridView.countBuilder(
           crossAxisCount:2, // Number of columns
           itemCount: myList.length,
           itemBuilder: (BuildContext context, int index) {
@@ -124,8 +127,8 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
               background: Container(
                 color: Colors.red,
                 alignment: Alignment.centerRight,
-                padding: EdgeInsets.symmetric(horizontal: 20.0),
-                child: Icon(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: const Icon(
                   Icons.delete,
                   color: Colors.white,
                 ),
@@ -136,16 +139,17 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
                   context: context,
                   builder: (BuildContext context) {
                     return AlertDialog(
-                      title: Text("Confirm"),
-                      content: Text("Are you sure you want to delete this item?"),
+                      title: const Text("Confirm"),
+                      content: const Text("Are you sure you want to delete this item?"),
                       actions: <Widget>[
                         TextButton(
-                          onPressed: () => Navigator.of(context).pop(true),
-                          child: Text("DELETE"),
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text("CANCEL"),
                         ),
                         TextButton(
-                          onPressed: () => Navigator.of(context).pop(false),
-                          child: Text("CANCEL"),
+                          onPressed: () {
+                            Navigator.of(context).pop(true);},
+                          child: const Text("DELETE"),
                         ),
                       ],
                     );
@@ -188,7 +192,7 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
                           visible: title.isNotEmpty,
                           child: Text(
                             title,
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                           ),
                         ),
                         Visibility(
@@ -207,10 +211,11 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
             );
           },
           staggeredTileBuilder: (int index) =>
-              StaggeredTile.fit(1), // Specify the number of columns each item should occupy
+              const StaggeredTile.fit(1), // Specify the number of columns each item should occupy
           mainAxisSpacing: 10.0, // Set spacing between items vertically
           crossAxisSpacing: 10.0, // Set spacing between items horizontally
-        ),
+        ) :  const Center(child: Text('No Notes', style: TextStyle(fontSize: 15,
+            color: Colors.black),)),
       ),
 
 
@@ -234,7 +239,7 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
     final TextPainter textPainter = TextPainter(
       text: TextSpan(
         text: text,
-        style: TextStyle(fontSize: 16), // Set the font size according to your design
+        style: const TextStyle(fontSize: 16), // Set the font size according to your design
       ),
       maxLines: 2, // Set the maximum number of lines for the text
       textDirection: ui.TextDirection.ltr, // Set text direction to left-to-right
