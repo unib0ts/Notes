@@ -128,12 +128,15 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
                 alignment: Alignment.centerRight,
                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(9), color: Colors.red),
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: const Icon(
-                  Icons.delete,
-                  color: Colors.white,
+                child: const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Icon(
+                    Icons.delete,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-              direction: DismissDirection.endToStart,
+              direction: DismissDirection.startToEnd,
               confirmDismiss: (direction) async {
                 return await showDialog(
                   context: context,
