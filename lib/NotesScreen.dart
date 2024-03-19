@@ -56,11 +56,15 @@ class _NotesScreenState extends State<NotesScreen> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
-            if (widget.type! == 'Edit') {
-              updateSharedPreferencesItem(widget.editContent!['key'],_controller.text);
-            } else {
-              _addStringMapEntry(
-                  generateRandom4DigitNumber().toString(), _controller.text, _controllertitle.text);
+            if(_controller.text.isNotEmpty || _controllertitle.text.isNotEmpty) {
+              if (widget.type! == 'Edit') {
+                updateSharedPreferencesItem(
+                    widget.editContent!['key'], _controller.text);
+              } else {
+                _addStringMapEntry(
+                    generateRandom4DigitNumber().toString(), _controller.text,
+                    _controllertitle.text);
+              }
             }
             Navigator.pop(context);
           },
@@ -84,11 +88,15 @@ class _NotesScreenState extends State<NotesScreen> {
           IconButton(
             icon: Text('Done', style: TextStyle(fontSize: 15, color: Colors.black, fontWeight: FontWeight.bold)),
             onPressed: () {
-              if (widget.type! == 'Edit') {
-                updateSharedPreferencesItem(widget.editContent!['key'],content);
-              } else {
-                _addStringMapEntry(
-                    generateRandom4DigitNumber().toString(), content, _controllertitle.text);
+              if(_controller.text.isNotEmpty || _controllertitle.text.isNotEmpty) {
+                if (widget.type! == 'Edit') {
+                  updateSharedPreferencesItem(
+                      widget.editContent!['key'], content);
+                } else {
+                  _addStringMapEntry(
+                      generateRandom4DigitNumber().toString(), content,
+                      _controllertitle.text);
+                }
               }
               Navigator.pop(context);
             },
@@ -152,7 +160,8 @@ class _NotesScreenState extends State<NotesScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.only(bottom: 8.0),
-                child: Text(widget.type! == 'Edit'? 'Last updated at : '+formatDate(DateTime.parse(widget.editContent!['timestamp'])) : ''),
+                child: Text(widget.type! == 'Edit'? 'Edited : '+formatDate(DateTime.parse(widget.editContent!['timestamp'])) : '',
+                style: const TextStyle(fontSize: 10.0, color: Colors.black),),
               )
             ],
           ),

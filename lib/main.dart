@@ -151,8 +151,9 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(title,style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold),),
-                            Text(subTitle),
+                            Visibility(
+                                visible: title.isNotEmpty ,child: Text(title,style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold),)),
+                            Visibility(visible: subTitle.isNotEmpty ,child: Text(subTitle)),
                           ],
                         ),
                         //Text(formatDate(DateTime.parse(timestamp)))
@@ -225,7 +226,8 @@ class _DataSearch extends SearchDelegate<String?> {
         Map<String, dynamic> entryMap = json.decode(myList[index].value);
 
         return ListTile(
-          title: Text('${results[index].key}: ${entryMap['value']}'),
+          title: Text('${entryMap['title']}'),
+          subtitle: Text(' ${entryMap['value']}'),
         );
       },
     );
@@ -233,17 +235,20 @@ class _DataSearch extends SearchDelegate<String?> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
+    print('query'+query);
     final List<MapEntry<String, String>> suggestions = myList
         .where((entry) =>
     entry.key.toLowerCase().contains(query.toLowerCase()) ||
         entry.value.toLowerCase().contains(query.toLowerCase()))
         .toList();
-    return ListView.builder(
+    return  query == '' ? Text(''):
+     ListView.builder(
       itemCount: suggestions.length,
       itemBuilder: (context, index) {
         Map<String, dynamic> entryMap = json.decode(myList[index].value);
-        return ListTile(
-          title: Text('${suggestions[index].key}: ${entryMap['value']}'),
+        return  /*query == null? */ ListTile(
+          title: Text('${entryMap['title']}'),
+          subtitle: Text(' ${entryMap['value']}'),
         );
       },
     );
