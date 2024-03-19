@@ -125,8 +125,8 @@ class _SharedPreferencesListDemoState extends State<SharedPreferencesListDemo> {
             return Dismissible(
               key: Key(item.key),
               background: Container(
-                color: Colors.red,
                 alignment: Alignment.centerRight,
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(9), color: Colors.red),
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: const Icon(
                   Icons.delete,
